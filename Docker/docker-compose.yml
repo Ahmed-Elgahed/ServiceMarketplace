@@ -15,7 +15,9 @@ services:
     restart: always
 
   backend:
-    build: ../backend
+    build:
+      context: ../backend
+      dockerfile: backend/backend/Dockerfile
     container_name: django_backend
     command: >
       gunicorn backend.wsgi:application
@@ -32,7 +34,9 @@ services:
     restart: always
 
   celery:
-    build: ../backend
+    build:
+      context: ../backend
+      dockerfile: backend/backend/Dockerfile
     container_name: celery_worker
     command: celery -A backend worker --loglevel=info
     volumes:
