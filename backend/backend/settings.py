@@ -51,7 +51,7 @@ INSTALLED_APPS = [
 # ===================================
 
 MIDDLEWARE = [
-    'backend.apps.users.middleware.BlockBruteForceMiddleware',
+    'apps.users.middleware.BlockBruteForceMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
