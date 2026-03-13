@@ -1,0 +1,114 @@
+<!-- استدعاء مكتبات التصميم -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+<body class="bg-gray-50 font-sans">
+
+    <!-- Navbar العلوية -->
+    <nav class="fixed top-0 w-full bg-white border-b border-gray-300 z-50 h-16 flex items-center justify-around">
+        <div class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+            PROLY CONNECT
+        </div>
+        <div class="relative hidden md:block">
+            <input type="text" placeholder="ابحث عن صنايعي (نقاش، سباك...)" class="bg-gray-100 border-none rounded-lg py-1 px-10 focus:ring-1 focus:ring-gray-400 w-64 text-sm">
+            <i class="fas fa-search absolute left-3 top-2 text-gray-400"></i>
+        </div>
+        <div class="flex space-x-6 text-xl items-center">
+            <i class="fas fa-home cursor-pointer"></i>
+            <i class="fab fa-facebook-messenger cursor-pointer"></i>
+            <i class="far fa-plus-square cursor-pointer"></i>
+            <i class="far fa-compass cursor-pointer"></i>
+            <i class="far fa-heart cursor-pointer"></i>
+            <img src="{{ user.avatar.url }}" class="w-8 h-8 rounded-full border border-gray-300 cursor-pointer">
+        </div>
+    </nav>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="mt-20 flex justify-center max-w-5xl mx-auto">
+        
+        <!-- التغذية الإخبارية (Feed) -->
+        <div class="w-full md:w-[600px] space-y-6">
+            
+            <!-- قسم الاستوريز (Stories) -->
+            <div class="bg-white border border-gray-300 rounded-lg p-4 flex space-x-4 overflow-x-auto scrollbar-hide">
+                {% for story in stories %}
+                <div class="flex-shrink-0 text-center">
+                    <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 to-fuchsia-600">
+                        <img src="{{ story.user.avatar.url }}" class="w-full h-full rounded-full border-2 border-white object-cover">
+                    </div>
+                    <span class="text-xs text-gray-500">{{ story.user.username }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- البوست (Instagram Post Card) -->
+            <div class="bg-white border border-gray-300 rounded-lg">
+                <div class="flex items-center justify-between p-3">
+                    <div class="flex items-center space-x-3">
+                        <img src="user_image.jpg" class="w-8 h-8 rounded-full">
+                        <div>
+                            <span class="font-bold text-sm">Ahmed_Electrican</span>
+                            <p class="text-xs text-gray-500">القاهرة - كهربائي منازل</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-ellipsis-h cursor-pointer text-gray-500"></i>
+                </div>
+                
+                <img src="work_sample.jpg" class="w-full object-cover max-h-[600px]">
+
+                <div class="p-4">
+                    <div class="flex justify-between items-center text-2xl mb-2">
+                        <div class="flex space-x-4">
+                            <i class="far fa-heart hover:text-red-500 cursor-pointer"></i>
+                            <i class="far fa-comment hover:text-gray-500 cursor-pointer"></i>
+                            <i class="far fa-paper-plane hover:text-blue-500 cursor-pointer"></i>
+                        </div>
+                        <i class="far fa-bookmark hover:text-yellow-500 cursor-pointer"></i>
+                    </div>
+                    <p class="font-bold text-sm mb-1">1,250 إعجاب</p>
+                    <p class="text-sm"><span class="font-bold">Ahmed_Electrican</span> تم بحمد الله الانتهاء من تأسيس فيلا بالكامل في التجمع.. <span class="text-blue-900 cursor-pointer">#كهرباء #شغل_مودرن</span></p>
+                    <p class="text-gray-400 text-xs mt-2 uppercase">منذ 3 ساعات</p>
+                </div>
+                
+                <!-- صندوق الكومنتات -->
+                <div class="border-t border-gray-200 p-3 flex items-center">
+                    <i class="far fa-smile text-2xl mr-3 text-gray-500"></i>
+                    <input type="text" placeholder="إضافة تعليق..." class="flex-grow border-none focus:ring-0 text-sm">
+                    <button class="text-blue-500 font-bold text-sm opacity-50">نشر</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- الجزء الجانبي (Suggestions) -->
+        <div class="hidden lg:block ml-8 w-80">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <img src="{{ user.avatar.url }}" class="w-14 h-14 rounded-full">
+                    <div>
+                        <p class="font-bold text-sm">{{ user.username }}</p>
+                        <p class="text-gray-500 text-sm">{{ user.get_user_type_display }}</p>
+                    </div>
+                </div>
+                <button class="text-blue-500 text-xs font-bold">تبديل</button>
+            </div>
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-gray-500 font-bold text-sm">اقتراحات لك</p>
+                <button class="text-xs font-bold">عرض الكل</button>
+            </div>
+            <!-- قائمة الصنايعية المقترحين -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center space-x-2">
+                        <img src="w1.jpg" class="w-8 h-8 rounded-full">
+                        <div>
+                            <p class="font-bold">Mostafa_Sabak</p>
+                            <p class="text-gray-400 text-xs">يتابعه 20 شخصاً</p>
+                        </div>
+                    </div>
+                    <button class="text-blue-500 font-bold text-xs text-right">متابعة</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
