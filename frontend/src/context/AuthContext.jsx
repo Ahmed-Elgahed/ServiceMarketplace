@@ -1,66 +1,79 @@
-/**
- * NEUX IDENTITY CONTEXT PROVIDER
- * ------------------------------
- * يدير حالة المستخدم بالكامل (Global State Management).
- */
-
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import axiosEngine from '../api/AxiosEngine';
+import React, { createContext, useState, useEffect, useContext } from "react";
+import API, { setToken } from "../services/api";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    // التحقق من الجلسة عند فتح الموقع
-    useEffect(() => {
-        const checkAuth = async () => {
-            const token = localStorage.getItem('accessToken');
-            if (token) {
-                try {
-                    const res = await axiosEngine.get('users/me/'); // هنبني الـ View ده
-                    setUser(res.data);
-                    setIsAuthenticated(true);
-                } catch (err) {
-                    console.error("Auth initialization failed");
-                }
-            }
-            setLoading(false);
-        };
-        checkAuth();
-    }, []);
+  const isAuthenticated = !!user;
 
-    // دالة تسجيل الدخول (The Login Logic)
-    const login = async (username, password) => {
-        try {
-            const res = await axiosEngine.post('token/', { username, password });
-            localStorage.setItem('accessToken', res.data.access);
-            localStorage.setItem('refreshToken', res.data.refresh);
-            
-            const userRes = await axiosEngine.get('users/me/');
-            setUser(userRes.data);
-            setIsAuthenticated(true);
-            return { success: true };
-        } catch (err) {
-            return { success: false, error: err.response?.data?.detail || "Login Failed" };
-        }
-    };
+  useEffect(() => {
+    const init = async () => {
+      const token = localStorage.getItem("access");
 
-    const logout = () => {
-        localStorage.clear();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setToken(token);
+
+        // ✅ بدل users/me نخلي المستخدم موجود بمجرد وجود توكن
+        setUser({ authenticated: true });
+
+      } catch (err) {
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+        setToken(null);
         setUser(null);
-        setIsAuthenticated(false);
-        window.location.href = '/login';
+      } finally {
+        setLoading(false);
+      }
     };
 
-    return (
-        <AuthContext.Provider value={{ user, loading, isAuthenticated, login, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+    init();
+  }, []);
+
+  const login = async (username, password) => {
+    try {
+      const res = await API.post("users/login/", {
+        username,
+        password,
+      });
+
+      const { access, refresh } = res.data;
+
+      localStorage.setItem("access", access);
+      localStorage.setItem("refresh", refresh);
+      setToken(access);
+
+      // ✅ ما نستدعيش users/me
+      setUser({ username });
+
+      return { success: true };
+
+    } catch (error) {
+      return { success: false, error: "Login failed" };
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    setToken(null);
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{ user, loading, isAuthenticated, login, logout }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Hook مخصص للاستخدام السهل فى أى Component
 export const useAuth = () => useContext(AuthContext);

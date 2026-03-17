@@ -10,8 +10,14 @@ export default function Messages() {
 
   // ✅ تصفير عداد الرسائل غير المقروءة عند دخول الصفحة
   useEffect(() => {
-    resetUnread();
-  }, []);
+    const token = localStorage.getItem("access");
+
+    if (!token) return;
+
+    if (resetUnread) {
+      resetUnread();
+    }
+  }, [resetUnread]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-black pt-14 pb-16 transition-colors">

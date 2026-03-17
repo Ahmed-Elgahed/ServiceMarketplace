@@ -3,20 +3,36 @@ let socket = null;
 export const connectSocket = (conversationId, onMessage) => {
   const token = localStorage.getItem("access");
 
+  if (!conversationId || !token) return;
+
+  // ✅ ديناميك حسب البروتوكول
+  const protocol =
+    window.location.protocol === "https:" ? "wss" : "ws";
+
+  const host = window.location.host;
+
   socket = new WebSocket(
-    `ws://127.0.0.1:8000/ws/chat/${conversationId}/?token=${token}`
+    `${protocol}://${host}/ws/chat/${conversationId}/?token=${token}`
   );
 
   socket.onopen = () => {
     console.log("✅ WebSocket Connected");
 
-    // ✅ نبلغ السيرفر إننا Online
-    socket.send(JSON.stringify({ type: "presence", status: "online" }));
+    socket.send(
+      JSON.stringify({
+        type: "presence",
+        status: "online",
+      })
+    );
   };
 
   socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (onMessage) onMessage(data);
+    try {
+      const data = JSON.parse(event.data);
+      if (onMessage) onMessage(data);
+    } catch (err) {
+      console.error("Invalid WS message:", err);
+    }
   };
 
   socket.onclose = () => {
@@ -36,8 +52,18 @@ export const sendSocketMessage = (data) => {
 
 export const disconnectSocket = () => {
   if (socket) {
-    // ✅ نبلغ السيرفر إننا Offline
-    socket.send(JSON.stringify({ type: "presence", status: "offline" }));
+    try {
+      socket.send(
+        JSON.stringify({
+          type: "presence",
+          status: "offline",
+        })
+      );
+    } catch (err) {
+      console.error("Error sending offline status:", err);
+    }
+
     socket.close();
+    socket = null;
   }
 };

@@ -9,36 +9,86 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useCallback } from "react";
 import API from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { Navigate } from "react-router-dom";
 
 export default function AnalyticsDashboard() {
+  const { loading: authLoading } = useAuth(); // ✅ تم حذف user
+
   const [revenueData, setRevenueData] = useState([]);
   const [userGrowthData, setUserGrowthData] = useState([]);
   const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // ============================
-  // ✅ Load Analytics Data
-  // ============================
-  useEffect(() => {
-    async function loadAnalytics() {
-      try {
-        const res = await API.get("admin/analytics/");
-        setRevenueData(res.data.revenue);
-        setUserGrowthData(res.data.user_growth);
-        setMetrics(res.data.metrics);
-      } catch (err) {
-        console.error("Failed to load analytics");
-      }
+  const loadAnalytics = useCallback(async () => {
+    const token = localStorage.getItem("access");
+
+    if (!token) {
+      setLoading(false);
+      return;
     }
 
-    loadAnalytics();
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await API.get("admin/analytics/");
+
+      setRevenueData(
+        Array.isArray(res?.data?.revenue) ? res.data.revenue : []
+      );
+
+      setUserGrowthData(
+        Array.isArray(res?.data?.user_growth)
+          ? res.data.user_growth
+          : []
+      );
+
+      setMetrics(res?.data?.metrics || {});
+
+    } catch (err) {
+      console.error("Failed to load analytics:", err);
+
+      if (err.response?.status === 403) {
+        setError("unauthorized");
+      } else {
+        setError("failed");
+      }
+
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  if (!metrics) {
+  useEffect(() => {
+    if (!authLoading) {
+      loadAnalytics();
+    }
+  }, [authLoading, loadAnalytics]);
+
+  // ✅ لسه بيتحقق من الجلسة
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center dark:text-white">
         Loading analytics...
+      </div>
+    );
+  }
+
+  // ✅ لو مش Admin
+  if (error === "unauthorized") {
+    return <Navigate to="/" replace />;
+  }
+
+  // ✅ فشل تحميل
+  if (!metrics) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Failed to load analytics
       </div>
     );
   }
@@ -56,21 +106,21 @@ export default function AnalyticsDashboard() {
         <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
           <p className="text-gray-500">Total Revenue</p>
           <p className="text-2xl font-bold text-green-500">
-            ${metrics.total_revenue}
+            ${Number(metrics.total_revenue || 0)}
           </p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
           <p className="text-gray-500">Total Users</p>
           <p className="text-2xl font-bold dark:text-white">
-            {metrics.total_users}
+            {metrics.total_users || 0}
           </p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
           <p className="text-gray-500">Active Today</p>
           <p className="text-2xl font-bold text-blue-500">
-            {metrics.active_today}
+            {metrics.active_today || 0}
           </p>
         </div>
 

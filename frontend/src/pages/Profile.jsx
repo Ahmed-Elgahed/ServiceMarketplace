@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import BottomNav from "../../components/layout/BottomNav";
+import BottomNav from "../../components/Layout/BottomNav";
 
 export default function Profile() {
   const navigate = useNavigate();

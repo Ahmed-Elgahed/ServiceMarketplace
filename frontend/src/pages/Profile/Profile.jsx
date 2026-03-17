@@ -1,48 +1,94 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getProfile, logoutUser } from "../../services/api";
+import { getProfile } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import FollowButton from "../../components/ui/FollowButton";
 
 export default function Profile() {
   const { username } = useParams();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // ✅ تحميل البيانات
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        setLoading(true);
-        const data = await getProfile(username);
+  const isMounted = useRef(true);
+
+  // ✅ Load Profile Safely
+  const loadProfile = useCallback(async () => {
+    const token = localStorage.getItem("access");
+    if (!token || !username) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setError(null);
+      setLoading(true);
+
+      const data = await getProfile(username);
+
+      if (isMounted.current) {
         setProfile(data);
-      } catch (err) {
-        console.error("Failed to load profile");
-      } finally {
+      }
+
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+
+      if (isMounted.current) {
+        if (err.response?.status === 404) {
+          setError("Profile not found.");
+        } else {
+          setError("Failed to load profile.");
+        }
+      }
+
+    } finally {
+      if (isMounted.current) {
         setLoading(false);
       }
     }
-
-    loadProfile();
   }, [username]);
 
-  // ✅ تحديث عدد المتابعين لحظيًا
+  useEffect(() => {
+    isMounted.current = true;
+    loadProfile();
+
+    return () => {
+      isMounted.current = false;
+    };
+  }, [loadProfile]);
+
+  // ✅ Update Followers Safely
   const updateFollowers = (type) => {
-    setProfile((prev) => ({
-      ...prev,
-      followers_count:
-        type === "follow"
-          ? prev.followers_count + 1
-          : Math.max(prev.followers_count - 1, 0),
-    }));
+    setProfile((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        followers_count:
+          type === "follow"
+            ? prev.followers_count + 1
+            : Math.max(prev.followers_count - 1, 0),
+      };
+    });
   };
 
-  // ✅ Loading State
+  // ✅ Loading
   if (loading) {
     return (
       <div className="pt-20 text-center dark:text-white">
         <p>Loading profile...</p>
+      </div>
+    );
+  }
+
+  // ✅ Error
+  if (error) {
+    return (
+      <div className="pt-20 text-center text-red-500">
+        {error}
       </div>
     );
   }
@@ -69,6 +115,7 @@ export default function Profile() {
             {!profile.is_me && (
               <FollowButton
                 username={profile.username}
+                isFollowingInitial={profile.is_following}
                 onFollow={updateFollowers}
               />
             )}
@@ -78,7 +125,7 @@ export default function Profile() {
           <div className="flex gap-6 mt-3 text-center">
 
             <div>
-              <p className="font-bold">{profile.posts_count}</p>
+              <p className="font-bold">{profile.posts_count || 0}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Posts
               </p>
@@ -86,9 +133,13 @@ export default function Profile() {
 
             <div
               className="cursor-pointer"
-              onClick={() => navigate(`/${profile.username}/followers`)}
+              onClick={() =>
+                navigate(`/${profile.username}/followers`)
+              }
             >
-              <p className="font-bold">{profile.followers_count}</p>
+              <p className="font-bold">
+                {profile.followers_count || 0}
+              </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Followers
               </p>
@@ -96,9 +147,13 @@ export default function Profile() {
 
             <div
               className="cursor-pointer"
-              onClick={() => navigate(`/${profile.username}/following`)}
+              onClick={() =>
+                navigate(`/${profile.username}/following`)
+              }
             >
-              <p className="font-bold">{profile.following_count}</p>
+              <p className="font-bold">
+                {profile.following_count || 0}
+              </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Following
               </p>
@@ -120,16 +175,15 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Logout (لو حسابك) */}
+      {/* Logout */}
       {profile.is_me && (
         <button
-          onClick={logoutUser}
+          onClick={logout}
           className="mt-6 w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg transition-colors"
         >
           Logout
         </button>
       )}
-
     </div>
   );
 }

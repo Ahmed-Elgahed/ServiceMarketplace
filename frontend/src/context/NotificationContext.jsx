@@ -8,24 +8,41 @@ export function NotificationProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem("access");
 
+    // ✅ لو مفيش توكن ماتفتحش سوكت
+    if (!token) return;
+
     const socket = new WebSocket(
       `ws://127.0.0.1:8000/ws/notifications/?token=${token}`
     );
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    socket.onopen = () => {
+      console.log("Notification socket connected ✅");
+    };
 
-      if (data.type === "new_notification") {
-        setUnreadCount((prev) => prev + 1);
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data?.type === "new_notification") {
+          setUnreadCount((prev) => prev + 1);
+        }
+      } catch (err) {
+        console.error("Invalid WebSocket message:", err);
       }
+    };
+
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
     };
 
     socket.onclose = () => {
       console.log("Notification socket closed");
     };
 
-    return () => socket.close();
-  }, []);
+    return () => {
+      socket.close();
+    };
+  }, []); // ✅ يفتح مرة واحدة بعد تحميل الصفحة
 
   const resetUnread = () => {
     setUnreadCount(0);

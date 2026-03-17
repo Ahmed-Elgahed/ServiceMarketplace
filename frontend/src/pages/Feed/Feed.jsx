@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getPosts } from "../../services/api";
 import PostCard from "../../components/post/PostCard";
 
@@ -9,31 +9,34 @@ export default function Feed() {
   const [hasMore, setHasMore] = useState(true);
 
   // ✅ تحميل البوستات
-  const loadPosts = async () => {
-    if (loading || !hasMore) return;
+  const loadPosts = useCallback(async () => {
+    const token = localStorage.getItem("access");
+
+    // ✅ لو مفيش توكن مايضربش API
+    if (!token || loading || !hasMore) return;
 
     try {
       setLoading(true);
 
       const data = await getPosts(page);
 
-      if (!data.results || data.results.length === 0) {
+      if (!data?.results || data.results.length === 0) {
         setHasMore(false);
       } else {
         setPosts((prev) => [...prev, ...data.results]);
       }
 
     } catch (err) {
-      console.error("Failed to load posts");
+      console.error("Failed to load posts:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, loading, hasMore]);
 
   // ✅ تحميل أول مرة + عند تغيير الصفحة
   useEffect(() => {
     loadPosts();
-  }, [page]);
+  }, [loadPosts]);
 
   return (
     <div className="pt-14 pb-16 max-w-md mx-auto px-4">

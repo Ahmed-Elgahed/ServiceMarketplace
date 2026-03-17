@@ -1,30 +1,62 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
-const STORY_DURATION = 5000; // مدة القصة 5 ثواني
+const STORY_DURATION = 5000; // 5 seconds
 
-export default function StoryViewer({ stories, currentIndex, nextStory }) {
+export default function StoryViewer({
+  stories = [],
+  currentIndex = 0,
+  nextStory,
+}) {
   const [progress, setProgress] = useState(0);
+  const timerRef = useRef(null);
+  const isMounted = useRef(true);
+
+  const currentStory = stories[currentIndex];
 
   useEffect(() => {
+    if (!currentStory) return;
+
     setProgress(0);
+    isMounted.current = true;
 
     const startTime = Date.now();
 
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const percentage = (elapsed / STORY_DURATION) * 100;
 
       if (percentage >= 100) {
-        clearInterval(timer);
-        setProgress(100);
-        nextStory();
+        clearInterval(timerRef.current);
+
+        if (isMounted.current) {
+          setProgress(100);
+        }
+
+        if (typeof nextStory === "function") {
+          nextStory();
+        }
+
       } else {
-        setProgress(percentage);
+        if (isMounted.current) {
+          setProgress(percentage);
+        }
       }
     }, 50);
 
-    return () => clearInterval(timer);
-  }, [currentIndex]);
+    return () => {
+      isMounted.current = false;
+      clearInterval(timerRef.current);
+    };
+  }, [currentIndex, currentStory, nextStory]);
+
+  // ✅ لو مفيش قصة
+  if (!currentStory) {
+    return (
+      <div className="w-full h-screen bg-black flex items-center justify-center text-white">
+        No story available
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-screen bg-black flex items-center justify-center">
@@ -39,7 +71,7 @@ export default function StoryViewer({ stories, currentIndex, nextStory }) {
 
       {/* ✅ Story Image */}
       <img
-        src={stories[currentIndex]?.image}
+        src={currentStory.image}
         alt="story"
         className="max-h-full object-contain"
       />

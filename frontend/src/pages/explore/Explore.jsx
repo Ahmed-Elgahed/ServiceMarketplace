@@ -1,5 +1,5 @@
-import TopNav from "../../components/layout/TopNav";
-import BottomNav from "../../components/layout/BottomNav";
+import TopNav from "../../components/Layout/TopNav";
+import BottomNav from "../../components/Layout/BottomNav";
 
 export default function Explore() {
   return (
@@ -12,6 +12,7 @@ export default function Explore() {
             <img
               key={i}
               src={`https://picsum.photos/400?random=${i}`}
+              alt={`Explore item ${i + 1}`}  // ✅ تم إضافة alt
               className="aspect-square object-cover"
             />
           ))}

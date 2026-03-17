@@ -4,19 +4,24 @@ import { useParams } from "react-router-dom";
 export default function Chat() {
   const { id } = useParams();
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState(["Hello 👋"]);
+  const [messages, setMessages] = useState([]);
 
   const sendMessage = () => {
     if (!message.trim()) return;
-    setMessages([...messages, message]);
+
+    // ✅ مؤقتًا بنضيف الرسالة للـ state بس
+    setMessages((prev) => [...prev, message]);
     setMessage("");
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col p-4">
-      <h2 className="font-bold mb-4">Chat with user_{id}</h2>
+    <div className="min-h-screen p-4 flex flex-col">
 
-      <div className="flex-1 space-y-2">
+      <h2 className="text-lg font-semibold mb-4">
+        Chat ID: {id}
+      </h2>
+
+      <div className="flex-1 space-y-2 overflow-y-auto">
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -32,7 +37,7 @@ export default function Chat() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           className="flex-1 border rounded-full px-4 py-2"
-          placeholder="Type message..."
+          placeholder="Type a message..."
         />
         <button
           onClick={sendMessage}
